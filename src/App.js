@@ -202,20 +202,22 @@ function connectEvents({ setEvtState, getEvtState, evtMap, getPxMap, getElm }) {
       const evtType = evtName.toString().replace(/^on/, "").toLowerCase();
 
       const evtHandlersList = {
-        mouseleave: null
+        mouseleave: getVisablyBoundOnMouseLeaveHandler
       };
 
-      const handler = get(
+      const getHandler = get(
         evtHandlersList,
         evtType,
-        getVisablyBoundEventHandler({
-          setEvtState,
-          getEvtState,
-          evtHandler,
-          getPxMap,
-          evtType
-        })
+        getVisablyBoundEventHandler
       );
+
+      const handler = getHandler({
+        setEvtState,
+        getEvtState,
+        evtHandler,
+        getPxMap,
+        evtType
+      });
 
       elm?.addEventListener(evtType, handler);
 
@@ -223,6 +225,37 @@ function connectEvents({ setEvtState, getEvtState, evtMap, getPxMap, getElm }) {
     });
 
     return () => evtRefMap.forEach((evtRef) => elm.removeEventListener(evtRef));
+  };
+}
+
+function getVisablyBoundOnMouseLeaveHandler({
+  evtType,
+  evtHandler,
+  getPxMap,
+  getEvtState,
+  setEvtState
+}) {
+  return (evt) => {
+    const { x, y } = evtMosueInBounds(evt);
+    const pxMap = getPxMap();
+    const px = `${round(x)}_${round(y)}`;
+    const isHoverd = getEvtState()?.isHoverd;
+    const isInBounds = get(pxMap, px, false);
+
+    console.log(isInBounds ? " IN" : "OUT", evtType, "@", px, pxMap);
+
+    debugger;
+
+    if (!isInBounds || !isHoverd) {
+      setEvtState({
+        ...getEvtState(),
+        isHoverd: false
+      });
+      // console.log("evt: (in-of-bound)", evtName, evtHandler.name);
+      evtHandler(evt);
+    } else {
+      // console.log("evt: (out-of-bound)", evtName, evtHandler.name);
+    }
   };
 }
 
